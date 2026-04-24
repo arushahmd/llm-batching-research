@@ -1,0 +1,62 @@
+{
+  "created_at_utc": "2026-04-10T00:00:00Z",
+  "project_name": "llm-batching-research",
+  "root": "D:/Working/llm-batching-research",
+  "paths": {
+    "configs": "D:/Working/llm-batching-research/configs",
+    "data_raw": "D:/Working/llm-batching-research/data/raw",
+    "data_processed": "D:/Working/llm-batching-research/data/processed",
+    "data_indexes": "D:/Working/llm-batching-research/data/indexes",
+    "data_splits": "D:/Working/llm-batching-research/data/splits",
+    "models": "D:/Working/llm-batching-research/models",
+    "experiments": "D:/Working/llm-batching-research/experiments",
+    "notebooks": "D:/Working/llm-batching-research/notebooks",
+    "scripts": "D:/Working/llm-batching-research/scripts",
+    "src": "D:/Working/llm-batching-research/src"
+  },
+  "assets": {
+    "base_model": {
+      "name": "flan-t5-small",
+      "path": "D:/Working/llm-batching-research/models/flan-t5-small",
+      "source_model_id": "google/flan-t5-small"
+    },
+    "embedding_model": {
+      "name": "all-MiniLM-L6-v2",
+      "path": "D:/Working/llm-batching-research/models/all-MiniLM-L6-v2",
+      "source_model_id": "sentence-transformers/all-MiniLM-L6-v2"
+    },
+    "raw_dataset": {
+      "name": "dolly_small_1k",
+      "path": "D:/Working/llm-batching-research/data/raw/dolly_15k"
+    },
+    "processed_dataset": {
+      "name": "dolly_small_1k__flan-t5-small__tok_with_rawidx_v1",
+      "path": "D:/Working/llm-batching-research/data/processed/dolly_small_1k__flan-t5-small__tok_with_rawidx_v1"
+    },
+    "semantic_index": {
+      "name": "dolly_small_1k__all-MiniLM-L6-v2",
+      "path": "D:/Working/llm-batching-research/data/indexes/semantic_groups/dolly_small_1k__all-MiniLM-L6-v2"
+    }
+  },
+  "dataset_variants": {
+    "dolly_small_1k": {
+      "raw_dataset_path": "D:/Working/llm-batching-research/data/raw/dolly_15k",
+      "processed_dataset_path": "D:/Working/llm-batching-research/data/processed/dolly_small_1k__flan-t5-small__tok_with_rawidx_v1",
+      "semantic_index_path": "D:/Working/llm-batching-research/data/indexes/semantic_groups/dolly_small_1k__all-MiniLM-L6-v2"
+    },
+    "dolly_3k": {
+      "raw_dataset_path": "D:/Working/llm-batching-research/data/raw/dolly_3k",
+      "processed_dataset_path": "D:/Working/llm-batching-research/data/processed/dolly_3k__flan-t5-small__tok_with_rawidx_v1",
+      "semantic_index_path": "D:/Working/llm-batching-research/data/indexes/semantic_groups/dolly_3k__all-MiniLM-L6-v2"
+    },
+    "dolly_5k": {
+      "raw_dataset_path": "D:/Working/llm-batching-research/data/raw/dolly_5k",
+      "processed_dataset_path": "D:/Working/llm-batching-research/data/processed/dolly_5k__flan-t5-small__tok_with_rawidx_v1",
+      "semantic_index_path": "D:/Working/llm-batching-research/data/indexes/semantic_groups/dolly_5k__all-MiniLM-L6-v2"
+    }
+  },
+  "notes": {
+    "purpose": "Local-first manifest for canonical asset paths used by the instruction fine-tuning and semantic batching pipeline.",
+    "convention": "Experiment-specific outputs live under experiments/. Reusable models and datasets live under models/ and data/."
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "exp_id": "exp_026_random_only_multiseed_5k",
+    "n_seeds": 3,
+    "seeds": "seed_013,seed_021,seed_042",
+    "mean_rouge1": 0.1332991221165225,
+    "std_rouge1": 0.0020164915902323,
+    "mean_rouge2": 0.05172597342614166,
+    "std_rouge2": 0.001973474178185322,
+    "mean_rougeL": 0.12528074807592213,
+    "std_rougeL": 0.001879402357167189,
+    "mean_rougeLsum": 0.1255176984312918,
+    "std_rougeLsum": 0.001713859683307618,
+    "mean_bertscore_f1": 0.8358021107912063,
+    "std_bertscore_f1": 0.0004622980477068232
+  },
+  {
+    "exp_id": "exp_027_grouped_only_multiseed_5k",
+    "n_seeds": 3,
+    "seeds": "seed_013,seed_021,seed_042",
+    "mean_rouge1": 0.13515864447757928,
+    "std_rouge1": 0.000821310043745659,
+    "mean_rouge2": 0.05267632000153163,
+    "std_rouge2": 0.0008599748859510768,
+    "mean_rougeL": 0.12741708266264154,
+    "std_rougeL": 0.0008997847037711997,
+    "mean_rougeLsum": 0.12762222208271706,
+    "std_rougeLsum": 0.0009568022221241892,
+    "mean_bertscore_f1": 0.8365236309369406,
+    "std_bertscore_f1": 0.00029145341957466175
+  },
+  {
+    "exp_id": "exp_028_grouped_to_random_multiseed_5k",
+    "n_seeds": 3,
+    "seeds": "seed_013,seed_021,seed_042",
+    "mean_rouge1": 0.13573552053686477,
+    "std_rouge1": 0.0006310815717993919,
+    "mean_rouge2": 0.05290762532282947,
+    "std_rouge2": 0.0007638326220628706,
+    "mean_rougeL": 0.12741556756984396,
+    "std_rougeL": 0.00040348389836700736,
+    "mean_rougeLsum": 0.1279101682552873,
+    "std_rougeLsum": 0.00047559550741240033,
+    "mean_bertscore_f1": 0.836249907930692,
+    "std_bertscore_f1": 0.00025796425857546053
+  },
+  {
+    "exp_id": "exp_029_random_to_grouped_multiseed_5k",
+    "n_seeds": 3,
+    "seeds": "seed_013,seed_021,seed_042",
+    "mean_rouge1": 0.13429778290121783,
+    "std_rouge1": 0.0009638989478806322,
+    "mean_rouge2": 0.05139917328310489,
+    "std_rouge2": 0.0006283945874624924,
+    "mean_rougeL": 0.12623164340206786,
+    "std_rougeL": 0.0008984621429260791,
+    "mean_rougeLsum": 0.1263183377758188,
+    "std_rougeLsum": 0.0008879813126434798,
+    "mean_bertscore_f1": 0.8363362034161885,
+    "std_bertscore_f1": 0.0004125665273872965
+  }
+]

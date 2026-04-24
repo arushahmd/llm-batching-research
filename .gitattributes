@@ -1,0 +1,42 @@
+# =========================
+# Text normalization
+# =========================
+* text=auto
+
+# =========================
+# Python / configs (LF)
+# =========================
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+*.md text eol=lf
+
+# =========================
+# Notebooks
+# =========================
+*.ipynb text
+
+# =========================
+# Images / plots
+# =========================
+*.png binary
+*.jpg binary
+*.jpeg binary
+
+# =========================
+# Model / binary artifacts
+# =========================
+*.bin binary
+*.pt binary
+*.pth binary
+*.safetensors binary
+*.npy binary
+*.index binary
+*.arrow binary
+
+# =========================
+# Logs
+# =========================
+*.log text

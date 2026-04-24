@@ -1,0 +1,64 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.venv/
+venv/
+
+# Logs / temp
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Heavy research artifacts
+data/
+models/
+experiments/
+exports/
+
+# Large binary artifacts
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.arrow
+*.npy
+*.npz
+*.index
+*.faiss
+
+# Reports: ignore all by default
+reports/*
+
+# Keep official master reports
+!reports/master/
+!reports/master/**
+
+# Keep generation metric summaries only
+!reports/generation_eval_summaries/
+!reports/generation_eval_summaries/**
+
+# Keep plots
+!reports/plots/
+!reports/plots/**
+
+# Optional: keep archived lightweight CSV/JSON summaries
+!reports/archive/
+!reports/archive/**
+
+# Never track prediction dumps
+reports/**/predictions.csv
+
+# Notebook checkpoints
+.ipynb_checkpoints/
