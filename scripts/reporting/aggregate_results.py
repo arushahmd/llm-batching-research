@@ -11,15 +11,18 @@ from statistics import mean, stdev
 from typing import Any
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENTS_ROOT = PROJECT_ROOT / "experiments"
 REPORTS_ROOT = PROJECT_ROOT / "reports"
 
 EXPERIMENT_BLOCKS = {
-    "1k_short": range(12, 16),   # exp_012–015
-    "1k_long": range(18, 22),    # exp_018–021
-    "3k_long": range(22, 26),    # exp_022–025
-    "5k_long": range(26, 30),    # exp_026–029
+    "1k_short": range(12, 16),
+    "1k_long": range(18, 22),
+    "3k_long": range(22, 26),
+    "5k_long": range(26, 30),
+    "5k_curriculum_length": range(30, 32),
+    "5k_curriculum_length_longer": range(32, 33),
 }
 
 
@@ -101,6 +104,8 @@ def normalize_method_label(label: str) -> str:
         "grouped": "Grouped",
         "random→grouped": "Random→Grouped",
         "grouped→random": "Grouped→Random",
+        "easy_to_hard_length": "Easy→Hard Length",
+        "hard_to_easy_length": "Hard→Easy Length",
     }
     return mapping.get(label.lower(), label)
 
