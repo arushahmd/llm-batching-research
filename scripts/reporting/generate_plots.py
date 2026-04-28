@@ -1,89 +1,185 @@
+# scripts/reporting/generate_plots.py
+
+from __future__ import annotations
+
 from pathlib import Path
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-out = PROJECT_ROOT / "reports" / "plots"
-out.mkdir(parents=True, exist_ok=True)
 
-# Reconstructed from aggregated summaries shared in the conversation
-short_1k = pd.DataFrame([
-    {"Method": "Random", "Mean Eval Loss": 9.616399129231771, "Std Eval Loss": 0.00012846433173675242, "Mean Phase2 ΔEval": -0.0013834635416666667},
-    {"Method": "Grouped", "Mean Eval Loss": 9.61652692159017, "Std Eval Loss": 0.00021044965469782815, "Mean Phase2 ΔEval": -0.0013230641682942708},
-    {"Method": "Grouped→Random", "Mean Eval Loss": 9.616591453552246, "Std Eval Loss": 1.2615925364802315e-05, "Mean Phase2 ΔEval": -0.001311937967936198},
-    {"Method": "Random→Grouped", "Mean Eval Loss": 9.616386731465658, "Std Eval Loss": 9.03947098320946e-05, "Mean Phase2 ΔEval": -0.0013634363810221355},
-])
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+REPORTS_ROOT = PROJECT_ROOT / "reports"
+MASTER_DIR = REPORTS_ROOT / "master"
+PLOTS_DIR = REPORTS_ROOT / "plots"
 
-long_1k = pd.DataFrame([
-    {"Method": "Random", "Mean Eval Loss": 9.611238797505697, "Std Eval Loss": 0.00021307810464100992, "Mean Phase2 ΔEval": -0.0039908091227213545},
-    {"Method": "Grouped", "Mean Eval Loss": 9.611552556355795, "Std Eval Loss": 0.00010812468756713155, "Mean Phase2 ΔEval": -0.0038159688313802085},
-    {"Method": "Grouped→Random", "Mean Eval Loss": 9.611759503682455, "Std Eval Loss": 0.00021096115141597821, "Mean Phase2 ΔEval": -0.0037781397501627603},
-    {"Method": "Random→Grouped", "Mean Eval Loss": 9.611469268798828, "Std Eval Loss": 0.0002447879672933447, "Mean Phase2 ΔEval": -0.003803253173828125},
-])
+SUMMARY_CSV = MASTER_DIR / "master_summary_table.csv"
 
-long_3k = pd.DataFrame([
-    {"Method": "Random", "Mean Eval Loss": 11.423059145609537, "Std Eval Loss": 0.0022963785111432176, "Mean Phase2 ΔEval": -0.03380934397379557},
-    {"Method": "Grouped", "Mean Eval Loss": 11.425052642822266, "Std Eval Loss": 0.0006824924120630219, "Mean Phase2 ΔEval": -0.032903035481770836},
-    {"Method": "Grouped→Random", "Mean Eval Loss": 11.424866358439127, "Std Eval Loss": 0.001265824868793103, "Mean Phase2 ΔEval": -0.03327242533365885},
-    {"Method": "Random→Grouped", "Mean Eval Loss": 11.425841649373373, "Std Eval Loss": 0.000684287960140967, "Mean Phase2 ΔEval": -0.032347679138183594},
-])
+BLOCK_ORDER = [
+    "1k_short",
+    "1k_long",
+    "3k_long",
+    "5k_long",
+    "5k_curriculum_length",
+]
 
-# Save combined source data
-combined = pd.concat(
-    [
-        short_1k.assign(Block="1k_short"),
-        long_1k.assign(Block="1k_long"),
-        long_3k.assign(Block="3k_long"),
-    ],
-    ignore_index=True,
-)
-combined.to_csv(out / "combined_plot_data.csv", index=False)
+METHOD_ORDER = [
+    "Random",
+    "Grouped",
+    "Grouped→Random",
+    "Random→Grouped",
+    "Easy→Hard Length",
+    "Hard→Easy Length",
+]
 
-order = ["Random", "Grouped", "Grouped→Random", "Random→Grouped"]
 
-def make_bar_plot(df: pd.DataFrame, title: str, filename: str):
-    d = df.set_index("Method").loc[order].reset_index()
-    plt.figure(figsize=(8, 5))
-    plt.bar(d["Method"], d["Mean Eval Loss"], yerr=d["Std Eval Loss"], capsize=5)
+def load_master_summary() -> pd.DataFrame:
+    if not SUMMARY_CSV.exists():
+        raise FileNotFoundError(f"Master summary not found: {SUMMARY_CSV}")
+
+    df = pd.read_csv(SUMMARY_CSV)
+
+    required = {
+        "Block",
+        "Method",
+        "Mean Eval Loss",
+        "Std Eval Loss",
+        "Mean Phase2 ΔEval",
+    }
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Master summary missing columns: {sorted(missing)}")
+
+    return df
+
+
+def ordered_methods_for_block(df: pd.DataFrame) -> list[str]:
+    present = set(df["Method"].tolist())
+    ordered = [m for m in METHOD_ORDER if m in present]
+    extras = sorted(present - set(ordered))
+    return ordered + extras
+
+
+def make_eval_loss_plot(df: pd.DataFrame, block: str) -> None:
+    d = df[df["Block"] == block].copy()
+    if d.empty:
+        return
+
+    order = ordered_methods_for_block(d)
+    d = d.set_index("Method").loc[order].reset_index()
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(
+        d["Method"],
+        d["Mean Eval Loss"],
+        yerr=d["Std Eval Loss"],
+        capsize=5,
+    )
     plt.ylabel("Mean Eval Loss")
-    plt.title(title)
-    plt.xticks(rotation=15)
+    plt.title(f"{block}: Mean Eval Loss by Method")
+    plt.xticks(rotation=20, ha="right")
     plt.tight_layout()
-    plt.savefig(out / filename, dpi=200, bbox_inches="tight")
+
+    out_path = PLOTS_DIR / f"plot_{block}_eval_loss.png"
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
     plt.close()
 
-def make_phase_improvement_plot(df: pd.DataFrame, title: str, filename: str):
-    d = df.set_index("Method").loc[order].reset_index()
-    plt.figure(figsize=(8, 5))
+
+def make_phase_delta_plot(df: pd.DataFrame, block: str) -> None:
+    d = df[df["Block"] == block].copy()
+    if d.empty:
+        return
+
+    order = ordered_methods_for_block(d)
+    d = d.set_index("Method").loc[order].reset_index()
+
+    plt.figure(figsize=(10, 5))
     plt.bar(d["Method"], d["Mean Phase2 ΔEval"])
     plt.ylabel("Mean Phase 2 ΔEval")
-    plt.title(title)
-    plt.xticks(rotation=15)
+    plt.title(f"{block}: Phase 2 Eval Loss Improvement")
+    plt.xticks(rotation=20, ha="right")
     plt.tight_layout()
-    plt.savefig(out / filename, dpi=200, bbox_inches="tight")
+
+    out_path = PLOTS_DIR / f"plot_{block}_phase2_delta.png"
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
     plt.close()
 
-make_bar_plot(short_1k, "1k Short Training: Mean Eval Loss by Method", "plot_1k_short_eval_loss.png")
-make_bar_plot(long_1k, "1k Long Training: Mean Eval Loss by Method", "plot_1k_long_eval_loss.png")
-make_bar_plot(long_3k, "3k Long Training: Mean Eval Loss by Method", "plot_3k_long_eval_loss.png")
 
-make_phase_improvement_plot(short_1k, "1k Short Training: Phase 2 Improvement", "plot_1k_short_phase2_delta.png")
-make_phase_improvement_plot(long_1k, "1k Long Training: Phase 2 Improvement", "plot_1k_long_phase2_delta.png")
-make_phase_improvement_plot(long_3k, "3k Long Training: Phase 2 Improvement", "plot_3k_long_phase2_delta.png")
+def make_5k_full_comparison(df: pd.DataFrame) -> None:
+    d = df[df["Block"].isin(["5k_long", "5k_curriculum_length"])].copy()
+    if d.empty:
+        return
 
-# Cross-block comparison line plot by method
-plt.figure(figsize=(9, 5))
-for method in order:
-    d = combined[combined["Method"] == method].set_index("Block").loc[["1k_short", "1k_long", "3k_long"]].reset_index()
-    plt.plot(d["Block"], d["Mean Eval Loss"], marker="o", label=method)
-plt.ylabel("Mean Eval Loss")
-plt.title("Mean Eval Loss Across Experiment Blocks")
-plt.legend()
-plt.tight_layout()
-plt.savefig(out / "plot_cross_block_eval_trends.png", dpi=200, bbox_inches="tight")
-plt.close()
+    d["Display"] = d["Block"] + " | " + d["Method"]
 
-print("Created files:")
-for p in sorted(out.glob("plot_*.png")):
-    print(p.name)
-print((out / "combined_plot_data.csv").name)
+    display_order = [
+        "5k_long | Random",
+        "5k_long | Grouped",
+        "5k_long | Grouped→Random",
+        "5k_long | Random→Grouped",
+        "5k_curriculum_length | Easy→Hard Length",
+        "5k_curriculum_length | Hard→Easy Length",
+    ]
+    display_order = [x for x in display_order if x in set(d["Display"])]
+
+    d = d.set_index("Display").loc[display_order].reset_index()
+
+    plt.figure(figsize=(12, 5))
+    plt.bar(
+        d["Display"],
+        d["Mean Eval Loss"],
+        yerr=d["Std Eval Loss"],
+        capsize=5,
+    )
+    plt.ylabel("Mean Eval Loss")
+    plt.title("5k Comparison: Batching vs Length-Based Curriculum")
+    plt.xticks(rotation=25, ha="right")
+    plt.tight_layout()
+
+    out_path = PLOTS_DIR / "plot_5k_full_curriculum_comparison_eval_loss.png"
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
+
+def make_cross_block_random_trend(df: pd.DataFrame) -> None:
+    d = df[df["Method"] == "Random"].copy()
+    d = d[d["Block"].isin(["1k_short", "1k_long", "3k_long", "5k_long"])]
+
+    if d.empty:
+        return
+
+    d["Block"] = pd.Categorical(d["Block"], categories=BLOCK_ORDER, ordered=True)
+    d = d.sort_values("Block")
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(d["Block"].astype(str), d["Mean Eval Loss"], marker="o")
+    plt.ylabel("Mean Eval Loss")
+    plt.title("Random Baseline Eval Loss Across Experiment Blocks")
+    plt.tight_layout()
+
+    out_path = PLOTS_DIR / "plot_random_baseline_cross_block_eval_loss.png"
+    plt.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
+
+def main() -> None:
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    df = load_master_summary()
+    df.to_csv(PLOTS_DIR / "combined_plot_data.csv", index=False)
+
+    for block in BLOCK_ORDER:
+        make_eval_loss_plot(df, block)
+        make_phase_delta_plot(df, block)
+
+    make_5k_full_comparison(df)
+    make_cross_block_random_trend(df)
+
+    print("Created files:")
+    for p in sorted(PLOTS_DIR.glob("plot_*.png")):
+        print(p.name)
+    print("combined_plot_data.csv")
+
+
+if __name__ == "__main__":
+    main()

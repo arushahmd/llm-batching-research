@@ -1,4 +1,4 @@
-# scripts/evaluate_generation_quality.py
+# scripts/evaluation/evaluate_generation_quality.py
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-# scripts/run_multiseed.py
+# scripts/training/run_multiseed.py
 
 from __future__ import annotations
 
@@ -10,11 +10,14 @@ from pathlib import Path
 import yaml
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_yaml(path: str | Path) -> dict:
     path = Path(path)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
 
@@ -82,7 +85,7 @@ def run_one_seed(config_path: str, manifest_path: str, seed: int) -> int:
     cmd = [
         sys.executable,
         "-m",
-        "scripts.run_experiment",
+        "scripts.training.run_experiment",
         "--config",
         config_path,
         "--manifest",

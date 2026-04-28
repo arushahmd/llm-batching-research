@@ -7,8 +7,18 @@ import random
 from dataclasses import dataclass
 from typing import Iterator, Literal
 
+from src.batching.curriculum_sampler import (
+    CurriculumBatchSampler,
+    CurriculumBatchingConfig,
+)
 
-SamplerMode = Literal["random", "grouped"]
+
+SamplerMode = Literal[
+    "random",
+    "grouped",
+    "easy_to_hard_length",
+    "hard_to_easy_length",
+]
 
 
 @dataclass(frozen=True)
@@ -183,7 +193,8 @@ def make_batch_sampler(
     seed: int,
     drop_last: bool = False,
     anchor_to_group: dict[int, list[int]] | None = None,
-) -> RandomBatchSampler | GroupedBatchSampler:
+    dataset=None,
+) -> RandomBatchSampler | GroupedBatchSampler | CurriculumBatchSampler:
     if sampler_mode == "random":
         return RandomBatchSampler(
             dataset_size=dataset_size,
@@ -195,6 +206,7 @@ def make_batch_sampler(
     if sampler_mode == "grouped":
         if anchor_to_group is None:
             raise ValueError("anchor_to_group is required when sampler_mode='grouped'")
+
         return GroupedBatchSampler(
             anchor_to_group=anchor_to_group,
             dataset_size=dataset_size,
@@ -202,6 +214,22 @@ def make_batch_sampler(
             seed=seed,
             drop_last=drop_last,
             pad_incomplete_batches=True,
+        )
+
+    if sampler_mode in {"easy_to_hard_length", "hard_to_easy_length"}:
+        if dataset is None:
+            raise ValueError(
+                "dataset is required when sampler_mode is "
+                "'easy_to_hard_length' or 'hard_to_easy_length'"
+            )
+
+        return CurriculumBatchSampler(
+            dataset=dataset,
+            config=CurriculumBatchingConfig(
+                mode=sampler_mode,
+                batch_size=batch_size,
+                seed=seed,
+            ),
         )
 
     raise ValueError(f"Unsupported sampler_mode: {sampler_mode}")

@@ -47,6 +47,14 @@ class CustomBatchingSeq2SeqTrainer(Seq2SeqTrainer):
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
 
+        # batch_sampler = make_batch_sampler(
+        #     sampler_mode=self._sampler_mode,
+        #     dataset_size=len(self.train_dataset),
+        #     batch_size=self._train_batch_size,
+        #     seed=self._sampler_seed,
+        #     drop_last=False,
+        #     anchor_to_group=self._anchor_to_group,
+        # )
         batch_sampler = make_batch_sampler(
             sampler_mode=self._sampler_mode,
             dataset_size=len(self.train_dataset),
@@ -54,6 +62,7 @@ class CustomBatchingSeq2SeqTrainer(Seq2SeqTrainer):
             seed=self._sampler_seed,
             drop_last=False,
             anchor_to_group=self._anchor_to_group,
+            dataset=self.train_dataset,
         )
 
         return DataLoader(

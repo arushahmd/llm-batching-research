@@ -1,4 +1,4 @@
-# scripts/run_experiment.py
+# scripts/training/run_experiment.py
 
 from __future__ import annotations
 
