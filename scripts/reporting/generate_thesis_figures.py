@@ -351,6 +351,10 @@ def annotate_horizontal_values(ax, x_values: list[float], y_values: list[float],
         ax.text(x_text, y_value, label, ha=ha, va="center", fontsize=8)
 
 
+def format_plot_value(value: float, decimals: int = 5) -> str:
+    return f"{value:.{decimals}f}"
+
+
 def panel_ylim(values: list[float], std_values: list[float] | None = None) -> tuple[float, float]:
     if std_values is None:
         std_values = [0.0 for _ in values]
@@ -374,7 +378,7 @@ def disable_axis_offset(ax, axis: str) -> None:
 
 
 def create_figure_1_1() -> FigureRecord:
-    fig, ax = setup_diagram_axis((16, 3.8))
+    fig, ax = setup_diagram_axis((18, 4.2))
     titles = [
         "Pretrained\nLLMs",
         "Instruction\nFine-Tuning",
@@ -382,12 +386,24 @@ def create_figure_1_1() -> FigureRecord:
         "Unknown effect of\nbatch scheduling",
         "Research question:\nDoes batch composition/order\naffect fine-tuning?",
     ]
-    x_positions = [0.02, 0.22, 0.42, 0.62, 0.80]
-    widths = [0.14, 0.14, 0.14, 0.14, 0.18]
+    x_positions = [0.01, 0.205, 0.40, 0.595, 0.79]
+    widths = [0.15, 0.15, 0.15, 0.15, 0.20]
     for index, title in enumerate(titles):
         face = "0.15" if index == len(titles) - 1 else "white"
         text_color = "white" if index == len(titles) - 1 else "black"
-        add_box(ax, x_positions[index], 0.30, widths[index], 0.40, title, facecolor=face, text_color=text_color, weight="bold")
+        fontsize = 11 if index == len(titles) - 1 else 12
+        add_box(
+            ax,
+            x_positions[index],
+            0.28,
+            widths[index],
+            0.42,
+            title,
+            facecolor=face,
+            text_color=text_color,
+            weight="bold",
+            fontsize=fontsize,
+        )
         if index < len(titles) - 1:
             add_arrow(ax, (x_positions[index] + widths[index], 0.50), (x_positions[index + 1], 0.50))
     path = save_figure(fig, "figure_1_1_research_motivation_flow.png")
@@ -842,7 +858,14 @@ def create_figure_5_4(master_rows: list[dict[str, object]]) -> FigureRecord:
         for y_position, row, value in zip(y_positions, rows, values):
             style = METHOD_STYLES[row["Method"]]
             ax.scatter(value, y_position, s=90, marker=style["marker"], color=style["facecolor"], edgecolors="black", zorder=3)
-            ax.text(value, y_position + 0.18, str(row["Mean Phase2 Delta Eval"]), ha="center", va="bottom", fontsize=7)
+            ax.text(
+                value,
+                y_position + 0.18,
+                format_plot_value(value, decimals=5),
+                ha="center",
+                va="bottom",
+                fontsize=7,
+            )
         spread = max(abs(min(values)), abs(max(values)))
         ax.set_xlim(-spread * 1.35, spread * 0.25 if spread > 0 else 0.01)
         ax.set_yticks(y_positions, labels)
@@ -869,27 +892,72 @@ def create_figure_5_4(master_rows: list[dict[str, object]]) -> FigureRecord:
 
 
 def create_figure_5_5(master_rows: list[dict[str, object]]) -> FigureRecord:
-    fig, ax = plt.subplots(figsize=(12, 6))
-    rows = []
-    rows.extend(get_rows_for_block(master_rows, "5k_curriculum_length"))
-    rows.append(get_rows_for_block(master_rows, "5k_curriculum_length_longer")[0])
-    labels = [DISPLAY_METHODS[row["Method"]] for row in rows]
+    same_budget_rows = get_rows_for_block(master_rows, "5k_curriculum_length")
+    extension_row = get_rows_for_block(master_rows, "5k_curriculum_length_longer")[1]
+    rows = same_budget_rows + [extension_row]
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+    x_positions = [0.0, 1.0, 3.0]
     values = [float(row["Mean Eval Loss"]) for row in rows]
-    y_positions = list(range(len(rows)))
-    colors = [METHOD_STYLES[row["Method"]]["facecolor"] for row in rows]
-    ax.barh(y_positions, values, color=colors, edgecolor="black", linewidth=1.2)
-    ax.set_yticks(y_positions, labels)
-    ax.invert_yaxis()
-    ax.set_xlim(*panel_ylim(values))
-    disable_axis_offset(ax, "x")
+    labels = [
+        "Easy -> Hard\n(same budget)",
+        "Hard -> Easy\n(same budget)",
+        "Hard -> Easy\n(longer training)",
+    ]
+
+    ax.plot(
+        x_positions[:2],
+        values[:2],
+        color="0.35",
+        linewidth=1.2,
+        linestyle="--",
+        zorder=1,
+    )
+
+    for x_value, row, value in zip(x_positions, rows, values):
+        style = METHOD_STYLES[row["Method"]]
+        marker_size = 120 if row["Method"] == "Hard->Easy Length Longer" else 100
+        ax.scatter(
+            x_value,
+            value,
+            s=marker_size,
+            marker=style["marker"],
+            color=style["facecolor"],
+            edgecolors="black",
+            linewidths=1.0,
+            zorder=3,
+        )
+        y_offset = 0.035 if row["Method"] == "Hard->Easy Length Longer" else 0.025
+        ax.text(
+            x_value,
+            value + y_offset,
+            format_plot_value(value, decimals=5),
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
+
+    ax.axvline(2.0, color="0.55", linewidth=1.0, linestyle=":")
+    ax.text(0.5, 11.44, "Same-budget comparison", ha="center", va="center", fontsize=11, weight="bold")
+    ax.text(3.0, 11.44, "Longer-training extension", ha="center", va="center", fontsize=11, weight="bold")
+    ax.text(
+        3.0,
+        11.405,
+        "exp_032 uses longer training;\nnot same-budget comparable",
+        ha="center",
+        va="top",
+        fontsize=10,
+    )
+
+    ax.set_xlim(-0.6, 3.6)
+    ax.set_ylim(10.85, 11.48)
+    ax.set_xticks(x_positions, labels)
+    ax.set_ylabel("Mean eval loss")
+    ax.set_title("Figure 5.5  Length-based curricula and the longer-training extension")
+    disable_axis_offset(ax, "y")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.grid(axis="x", color="0.85", linewidth=0.8)
-    ax.set_xlabel("Mean eval loss")
-    ax.set_title("Figure 5.5  Length-based curricula and the longer-training extension")
-    for value, y_position, row in zip(values, y_positions, rows):
-        suffix = "  [longer budget]" if row["Method"] == "Hard->Easy Length Longer" else ""
-        ax.text(value, y_position, f" {row['Mean Eval Loss']}{suffix}", ha="left", va="center", fontsize=9)
+    ax.grid(axis="y", color="0.85", linewidth=0.8)
     fig.tight_layout()
     path = save_figure(fig, "figure_5_5_length_curriculum_extended_training.png")
     verify_png(path)
@@ -898,7 +966,7 @@ def create_figure_5_5(master_rows: list[dict[str, object]]) -> FigureRecord:
         filename=path.name,
         chapter="Chapter 5",
         placement="Section 5.5, length-based curriculum subsection",
-        caption="Comparison of length-based curriculum strategies and the longer-training Hard -> Easy extension.",
+        caption="Same-budget comparison of length-based curriculum strategies, with the longer-training Hard -> Easy extension shown separately.",
         source_data=str(MASTER_SUMMARY_CSV),
         caveat="The longer-training result is not directly comparable under the same training budget.",
     )
@@ -923,7 +991,14 @@ def create_figure_5_6(generation_rows: list[dict[str, object]]) -> FigureRecord:
         for y_position, row, value in zip(y_positions, rows, values):
             style = METHOD_STYLES[row["method"]]
             ax.scatter(value, y_position, s=90, marker=style["marker"], color=style["facecolor"], edgecolors="black", zorder=3)
-            ax.text(value, y_position + 0.18, str(row[mean_key]), ha="center", va="bottom", fontsize=7)
+            ax.text(
+                value,
+                y_position + 0.18,
+                format_plot_value(value, decimals=5),
+                ha="center",
+                va="bottom",
+                fontsize=7,
+            )
         ax.set_yticks(y_positions, [DISPLAY_METHODS[row["method"]] for row in rows])
         ax.invert_yaxis()
         ax.spines["top"].set_visible(False)
@@ -945,7 +1020,7 @@ def create_figure_5_6(generation_rows: list[dict[str, object]]) -> FigureRecord:
         filename=path.name,
         chapter="Chapter 5",
         placement="Section 5.6, generation-quality subsection",
-        caption="Generation-quality metrics for 5k batching and length-curriculum experiments.",
+        caption="Generation-quality metrics for 5k batching and length-curriculum experiments, plotted from the aggregated generation summary CSVs.",
         source_data=f"{GEN_SUMMARY_A_CSV}; {GEN_SUMMARY_B_CSV}",
         caveat="Aggregated generation CSVs conflict with some per-seed JSON files; use the aggregated CSVs consistently.",
     )
@@ -1017,7 +1092,7 @@ def create_figure_5_7(master_rows: list[dict[str, object]], per_seed_rows: list[
         filename=path.name,
         chapter="Chapter 5",
         placement="Section 5.7, stability and seed-variance subsection",
-        caption="Per-seed final evaluation loss showing seed-level variability across scheduling strategies.",
+        caption="Per-seed final evaluation loss showing seed-level variability across scheduling strategies; each experiment includes three seeds.",
         source_data=f"{PER_SEED_CSV}; {MASTER_SUMMARY_CSV}",
         caveat="Only three seeds were used per experiment.",
     )
