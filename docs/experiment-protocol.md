@@ -3,10 +3,12 @@
 This document records the canonical human-readable protocol for the active
 thesis-v2 Group 1 experiments.
 
-The machine-readable source for the current canonical 1K experiment is:
+The machine-readable configurations are:
 
 ```text
 configs/group1/dolly_1k.yaml
+configs/group1/dolly_3k.yaml
+configs/group1/dolly_5k.yaml
 ```
 
 The purpose of this document is to make the experimental design easy to audit
@@ -15,14 +17,15 @@ code.
 
 ## Protocol Status
 
-The Dolly 1K configuration is currently the canonical Group 1 template.
+The Dolly 1K, 3K, and 5K configurations are the canonical Group 1
+thesis-v2 settings.
 
-The 3K and 5K notebooks are preserved in the repository, but their final YAML
-configurations should be created only after they are reviewed against the same
-intended protocol.
+The three dataset-size conditions use the same model, LoRA setup, batching
+strategies, semantic-retrieval parameters, training hyperparameters, seeds, and
+evaluation metrics.
 
-Accordingly, this document treats the 1K configuration as the authoritative
-machine-readable reference for thesis-v2 at this stage.
+The intended controlled difference between the three configurations is the
+selected Dolly subset size.
 
 ## Experimental Objective
 
@@ -44,13 +47,17 @@ Each strategy is evaluated with three experiment seeds:
 42
 ```
 
-This produces:
+For each dataset-size setting:
 
 ```text
 4 strategies × 3 seeds = 12 runs
 ```
 
-for each dataset-size setting when the same protocol is applied.
+Across the three standardized dataset-size settings:
+
+```text
+12 runs × 3 dataset sizes = 36 Group 1 runs
+```
 
 ## Base Model
 
@@ -76,37 +83,42 @@ Source split:
 train
 ```
 
-Current canonical subset size:
+Canonical Group 1 subset sizes:
 
 ```text
 1,000 examples
+3,000 examples
+5,000 examples
 ```
 
-The dataset is shuffled before subset selection using:
+For every dataset-size configuration, the Dolly dataset is shuffled before
+subset selection using:
 
 ```text
 shuffle_seed = 42
 ```
 
-The first 1,000 examples after this deterministic shuffle are selected.
+The first `subset_size` examples after this deterministic shuffle are selected.
 
 ## Train / Evaluation Split
 
-The selected subset is divided using:
+Every selected subset is divided using:
 
 ```text
 eval_ratio = 0.10
 split_seed = 42
 ```
 
-For the 1K setting this yields approximately:
+Approximate split sizes are therefore:
 
-```text
-900 training examples
-100 evaluation examples
-```
+| Group 1 setting | Train | Evaluation |
+|---|---:|---:|
+| Dolly 1K | 900 | 100 |
+| Dolly 3K | 2,700 | 300 |
+| Dolly 5K | 4,500 | 500 |
 
-The same split is reused across batching strategies and experiment seeds.
+The split for a given dataset-size setting is reused across all batching
+strategies and experiment seeds.
 
 ## Dolly Input Formatting
 
@@ -163,7 +175,7 @@ therefore be treated as a new protocol requiring an explicit rerun.
 
 ## LoRA Configuration
 
-The current Group 1 LoRA configuration is:
+The canonical Group 1 LoRA configuration is:
 
 ```text
 r = 8
@@ -226,8 +238,8 @@ Mixed precision:
 fp16 = False
 ```
 
-The current notebook protocol does not perform periodic evaluation or checkpoint
-saving during these Group 1 runs.
+The Group 1 protocol does not perform periodic evaluation or checkpoint saving
+during these runs.
 
 Training arguments use:
 
@@ -238,7 +250,7 @@ report_to = "none"
 predict_with_generate = True
 ```
 
-Evaluation is performed manually after training.
+Evaluation is performed after training.
 
 ## Physical Batch Count
 
@@ -251,7 +263,7 @@ The number of physical batches is:
 max_steps × gradient_accumulation_steps
 ```
 
-For the current protocol:
+For the canonical Group 1 protocol:
 
 ```text
 300 × 2 = 600 physical batches
@@ -263,6 +275,9 @@ With a physical batch size of 3, the fixed-order sampler contains:
 600 × 3 = 1,800 example positions
 ```
 
+This value is the same for the 1K, 3K, and 5K settings because the number of
+optimizer steps and gradient-accumulation steps are held constant.
+
 Training examples may therefore appear multiple times across a run.
 
 ## Semantic Embedding Configuration
@@ -273,13 +288,13 @@ Embedding model:
 all-MiniLM-L6-v2
 ```
 
-Current embedding mode:
+Embedding mode:
 
 ```text
 embed_instruction_only = False
 ```
 
-This means semantic text is constructed from:
+Semantic text is therefore constructed from:
 
 ```text
 instruction + context
@@ -305,6 +320,9 @@ Semantic neighbor pool:
 ```text
 top_k = 8
 ```
+
+These semantic-retrieval settings are shared across the canonical 1K, 3K, and
+5K configurations.
 
 ## Random Batching Strategy
 
@@ -369,7 +387,7 @@ second_phase_seed = seed + 1000
 If the number of physical batches is odd, the second phase receives the
 remaining batch.
 
-For the current 600-batch protocol the split is:
+For the canonical 600-batch protocol the split is:
 
 ```text
 300 physical batches
@@ -399,7 +417,7 @@ experimental variable.
 
 ## Experiment Seed Handling
 
-Before loading the fresh model for an individual run, the current protocol sets:
+Before loading the fresh model for an individual run, the Group 1 protocol sets:
 
 ```text
 random.seed(seed)
@@ -407,9 +425,9 @@ numpy.random.seed(seed)
 torch.manual_seed(seed)
 ```
 
-Additional deterministic CUDA or cuDNN settings are not part of the currently
-executed Group 1 protocol and are therefore not silently introduced into the
-curated implementation.
+Additional deterministic CUDA or cuDNN settings were not part of the executed
+Group 1 protocol and are therefore not silently introduced into the curated
+implementation.
 
 ## Evaluation Loss
 
@@ -421,8 +439,7 @@ trainer.evaluate()
 
 is used to obtain the final evaluation loss on the held-out evaluation split.
 
-No intermediate evaluation schedule is required by the current Group 1
-protocol.
+No intermediate evaluation schedule is required by the Group 1 protocol.
 
 ## Generation Evaluation
 
@@ -463,7 +480,7 @@ The per-example F1 scores are averaged across the evaluation split.
 
 ### BERTScore
 
-BERTScore is not calculated by the current verified Group 1 implementation.
+BERTScore is not calculated by the verified Group 1 implementation.
 
 Historical notebook comments or imports referring to BERTScore should not be
 interpreted as evidence that BERTScore was part of the executed thesis-v2
@@ -485,18 +502,34 @@ rougeL
 The current runner writes raw rerun outputs under the ignored local
 `outputs/` directory.
 
-Only reviewed and validated lightweight results should eventually be promoted
-to the version-controlled `results/` directory.
+Only reviewed and validated lightweight results should be promoted to the
+version-controlled `results/` directory.
 
-## Dataset-Size Extension
+## Group 1 Dataset-Size Comparison
 
-The repository also contains Group 1 notebooks for Dolly 3K and 5K subsets.
+The 1K, 3K, and 5K conditions now form one standardized Group 1 comparison.
 
-Before creating their canonical YAML files or publishing aggregate comparisons,
-their settings should be checked against this protocol.
+The protocol intentionally keeps the core experimental settings aligned across
+all three conditions so that dataset-size comparisons are not confounded by
+changes such as different semantic-neighbor counts or different embedding-text
+construction.
 
-Only verified differences such as dataset subset size should be carried into
-those configurations unless a deliberate protocol change is documented.
+The three machine-readable configurations should therefore be treated as a
+single controlled experimental family.
+
+## Contrastive-Learning Extension
+
+The planned contrastive-learning experiment is not part of Group 1.
+
+Group 1 uses standard sequence-to-sequence supervised fine-tuning while
+changing only the composition and order of training batches.
+
+A contrastive extension introduces a materially different learning objective,
+for example by explicitly constructing positive and negative relationships and
+adding a contrastive loss.
+
+For scientific clarity, that work should be versioned as a separate experiment
+block rather than silently changing the Group 1 protocol.
 
 ## Legacy Protocol Separation
 
@@ -507,7 +540,7 @@ semantic-neighbor settings.
 Those experiments belong to the preserved legacy research version.
 
 They should not be merged into thesis-v2 result tables or conclusions as though
-they were generated under the current protocol.
+they were generated under the canonical Group 1 protocol.
 
 ## Change-Control Principle
 
