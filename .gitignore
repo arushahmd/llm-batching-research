@@ -62,3 +62,6 @@ reports/**/predictions.csv
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+
+# Local research intake
+/llm-batching-inbox/
