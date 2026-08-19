@@ -1,248 +1,238 @@
-# Instruction Fine-Tuning via Semantic Batching
+# Semantic Batching for Instruction Fine-Tuning
 
-## Overview
+Research repository for studying how semantic mini-batch construction and
+curriculum-style batch ordering affect instruction fine-tuning.
 
-This repository presents an empirical study on whether **semantic batching** improves instruction fine-tuning of large language models compared to standard **random batching**.
+The project compares standard random batching with embedding-based semantic
+grouping and two-phase batching curricula under a controlled multi-seed setup.
 
-The core idea is to construct mini-batches using semantically similar instruction samples, retrieved through embedding-based nearest-neighbor search, with the goal of producing more coherent gradient updates during training.
+## Research Question
 
-> Instead of sampling training examples randomly, semantic batching groups related instructions together and evaluates whether this improves convergence, generalization, or generation quality.
+Does organizing instruction-tuning examples into semantically coherent
+mini-batches improve optimization or generation quality compared with
+standard random batching?
 
----
+The current study evaluates four batching strategies:
 
-## Research Objective
+- Random
+- Semantically Grouped
+- Grouped → Random
+- Random → Grouped
 
-The objective of this project is to evaluate whether **retrieval-based semantic mini-batch construction** improves instruction fine-tuning outcomes compared to random batching.
-
-Specifically, this work investigates whether semantic batching:
-
-- improves convergence behavior
-- reduces evaluation loss
-- improves generalization
-- reduces training variance
-- improves generation quality
-- interacts meaningfully with curriculum-style two-phase training
-
----
-
-## Methodology
+## Current Experimental Setting
 
 ### Model
 
-- Base model: `google/flan-t5-small`
-- Fine-tuning method: LoRA
-- Training framework: Hugging Face Transformers
+- `google/flan-t5-small`
+- Parameter-efficient fine-tuning with LoRA
 
 ### Dataset
 
-The experiments use subsets of the Dolly instruction dataset:
-
-- Dolly 1k
-- Dolly 3k
-- Dolly 5k
+- `databricks/databricks-dolly-15k`
+- Controlled subsets:
+  - 1K
+  - 3K
+  - 5K
 
 ### Semantic Grouping
 
-Semantic grouping is performed using embedding-based retrieval:
-
-- Embedding model: `all-MiniLM-L6-v2`
+- Sentence embeddings: `all-MiniLM-L6-v2`
 - Similarity search: FAISS
-- Grouping strategy: anchor sample + nearest semantic neighbors
+- Cosine similarity through normalized embeddings and inner-product search
+- Anchor-based semantic neighbor sampling
 
-### Training Setup
-
-The experiments use a controlled multi-seed setup:
+### Current Group 1 Training Protocol
 
 - Seeds: `13`, `21`, `42`
-- Two-phase training design:
-  - Phase 1
-  - Phase 2
+- Physical training batch size: `3`
+- Gradient accumulation steps: `2`
+- Evaluation batch size: `2`
+- Maximum optimizer steps: `300`
+- Learning rate: `3e-3`
+- LoRA rank: `8`
+- LoRA alpha: `16`
+- LoRA dropout: `0.05`
+- LoRA target modules: `q`, `v`
+- Semantic neighbor pool: `top_k = 8`
 
-### Batching Strategies
+Experiment parameters are stored explicitly in YAML configuration files.
 
-The following batching strategies are compared:
+## Evaluation
 
-- Random
-- Grouped
-- Random → Grouped
-- Grouped → Random
-
-### Evaluation Metrics
-
-The project evaluates both optimization and generation behavior.
-
-Optimization metrics:
+The current Group 1 protocol records:
 
 - Evaluation loss
-- Training loss
-- Phase-wise evaluation improvement
-- Generalization gap
-
-Generation metrics:
-
 - ROUGE-1
 - ROUGE-2
 - ROUGE-L
-- BERTScore
 
----
+Generation metrics are computed from model-generated responses against the
+held-out reference responses.
 
-## Experimental Blocks
-
-The experiments are organized into progressively stronger evaluation blocks:
-
-| Block | Dataset | Training Setup | Purpose |
-|---|---:|---|---|
-| 1k Short | Dolly 1k | Short two-phase training | Initial controlled signal check |
-| 1k Long | Dolly 1k | Longer two-phase training | Test whether early signal persists |
-| 3k Long | Dolly 3k | Longer two-phase training | Scaling validation |
-| 5k Long | Dolly 5k | Longer two-phase training | Strongest validation setting |
-
----
-
-## Key Findings
-
-### 1. Random batching is a strong baseline
-
-Random batching consistently matched or outperformed structured semantic batching strategies across the controlled experiments.
-
-### 2. Semantic grouping does not improve generalization
-
-No consistent reduction in evaluation loss was observed across dataset sizes, training durations, or random seeds.
-
-### 3. Curriculum-style batching provides no stable benefit
-
-Switching batching strategies across phases, such as Random → Grouped or Grouped → Random, did not produce a reliable improvement.
-
-### 4. The batching effect diminishes with scale
-
-The early weak signal observed in smaller experiments becomes negligible as dataset size increases.
-
-### 5. Generation quality does not improve meaningfully
-
-Generation evaluation using ROUGE and BERTScore did not show a consistent advantage for semantic grouping or curriculum batching.
-
----
-
-## Final Conclusion
-
-Semantic batching does not provide a meaningful advantage over random batching for instruction fine-tuning in this experimental setting.
-
-Random batching remains:
-
-- simple
-- robust
-- effective
-- difficult to outperform
-
-This project is therefore an empirical negative result: a theoretically plausible training strategy was tested systematically and found not to improve optimization, generalization, or generation quality under the evaluated conditions.
-
----
+> BERTScore is not currently part of the verified Group 1 evaluation pipeline.
 
 ## Repository Structure
 
 ```text
-configs/        # Experiment and model configuration files
-src/            # Core training, batching, data, and evaluation logic
-scripts/        # Runnable scripts for data processing, training, evaluation, and reporting
-manifests/      # Project path and asset manifests
-metadata/       # Experiment registry and tracking metadata
-notebooks/      # Exploratory and pipeline notebooks
-
-reports/
-  ├── master/                      # Official aggregated master results
-  ├── plots/                       # Final result visualizations
-  ├── generation_eval_summaries/   # Generation evaluation summaries
-  └── archive/                     # Older block-wise summaries
-```
-## Running Experiments
-
-### Run a multi-seed experiment
-
-```
-python-m scripts.training.run_multiseed \
---config configs/experiments/exp_026_random_only_multiseed_5k.yaml
-```
-
-### Aggregate results
-
-```
-python-m scripts.reporting.aggregate_results
-```
-
-### Generate plots
-
-```
-python-m scripts.reporting.generate_plots
+.
+├── configs/
+│   └── group1/
+│       └── dolly_1k.yaml
+│
+├── docs/
+│   └── research documentation
+│
+├── notebooks/
+│   ├── 00_validation/
+│   └── 01_group1/
+│
+├── results/
+│   └── curated and validated result artifacts
+│
+├── scripts/
+│   └── run_group1.py
+│
+├── src/
+│   ├── batching/
+│   ├── data/
+│   ├── evaluation/
+│   ├── training/
+│   └── utils/
+│
+├── tests/
+│   └── batching strategy tests
+│
+└── archive/
+    └── historical or superseded material
 ```
 
-### Evaluate generation quality
+## Code Organization
 
+The repository separates experimental notebooks from reusable research code.
+
+### `notebooks/`
+
+Used for:
+
+- exploratory research
+- validation
+- experiment execution
+- inspection of intermediate outputs
+- research analysis
+
+### `src/`
+
+Contains reusable and curated implementations for:
+
+- Dolly dataset preparation
+- semantic embedding and FAISS indexing
+- batching strategies
+- deterministic experiment ordering
+- LoRA model initialization
+- generation evaluation
+- reproducibility utilities
+
+### `configs/`
+
+Stores experiment definitions separately from implementation code so that
+dataset size, model settings, training parameters, and strategy choices remain
+explicit and auditable.
+
+### `results/`
+
+Reserved for lightweight, reviewed research outputs such as:
+
+- per-seed metrics
+- aggregate summaries
+- selected tables
+- selected figures
+
+Raw checkpoints, model weights, caches, embeddings, and temporary experiment
+artifacts are not intended to be committed to the repository.
+
+## Research Workflow
+
+The repository follows a separation between working research artifacts and
+curated source-controlled artifacts:
+
+```text
+Working notebooks / raw research artifacts
+                ↓
+        inspection and validation
+                ↓
+       reusable implementation
+                ↓
+        curated GitHub repository
 ```
-python-m scripts.evaluation.evaluate_generation_quality
-```
 
----
+This allows notebooks to remain useful for research while stable logic is
+maintained as reusable Python modules.
 
-## Data and Models
+## Current Status
 
-Due to size constraints, datasets, trained models, checkpoints, semantic indexes, and full experiment outputs are stored externally.
+The repository is currently being reorganized around the revised experimental
+protocol.
 
-Google Drive:
+Completed repository work includes:
 
-```
-[LINK WILL BE PROVIDED IN FINAL REPOSITORY]
-```
+- preservation of the previous research version
+- canonical Group 1 configuration
+- modular Dolly data pipeline
+- semantic embedding and FAISS utilities
+- random and semantic batching implementations
+- two-phase batching curriculum implementations
+- fixed-order Hugging Face trainer
+- LoRA model construction
+- experiment seed utilities
+- generation and ROUGE evaluation
+- batching strategy tests
+- configurable Group 1 experiment runner
 
-External artifact structure:
+The 1K, 3K, and 5K experimental artifacts are being reviewed and organized
+before final aggregate results and research conclusions are published.
 
-```
-data/
-models/
-experiments/
-reports/
-exports/
-```
+## Results Status
 
-The GitHub repository keeps only lightweight, reproducible assets such as code, configurations, notebooks, summary tables, and plots.
+Final thesis-v2 conclusions are intentionally not stated yet.
 
----
+Historical experiments and current reruns use materially different protocols,
+so results from earlier work should not be mixed with the current experimental
+design.
+
+Final claims will be added only after the complete current experiment set has
+been validated and aggregated.
 
 ## Reproducibility
 
-This repository is structured to support reproducible experimentation through:
+The revised repository is designed around:
 
-- fixed random seeds
-- YAML-based experiment configurations
-- modular training and batching components
-- explicit project manifests
-- separated code and artifact storage
-- aggregated result tables
-- preserved experiment registry
+- explicit YAML experiment configurations
+- fixed dataset split seeds
+- explicit experiment seeds
+- fresh model initialization per run
+- deterministic construction of batch orders
+- reusable implementation modules
+- separation of raw and curated results
 
----
+Exact environment packaging and full end-to-end reproduction instructions will
+be finalized after the experimental environment is validated.
 
-## Future Work
+## Artifact Policy
 
-Potential extensions include:
+Large or transient research artifacts should remain outside GitHub, including:
 
-- difficulty-aware curriculum batching
-- task-aware instruction grouping
-- loss-aware sampling strategies
-- hybrid semantic + difficulty-based curricula
-- evaluation on larger models such as T5-base or LLaMA-family models
-- evaluation on harder or more diverse instruction datasets
-- deeper qualitative analysis of generation behavior
+- model checkpoints
+- LoRA adapter checkpoints
+- Hugging Face caches
+- raw datasets
+- embedding caches
+- FAISS index files
+- temporary experiment outputs
+- runtime logs
+- generated prediction dumps
 
----
-
-## Research Significance
-
-This project contributes a systematic empirical evaluation of semantic batching for instruction fine-tuning.
-
-Although semantic batching was expected to improve training dynamics, the results show that random batching remains a strong and reliable baseline. This negative result is useful because it helps clarify the limits of intuitive batching strategies and prevents overclaiming benefits from semantic grouping without rigorous validation.
-
----
+GitHub is reserved for code, configurations, selected notebooks, documentation,
+tests, and validated lightweight research results.
 
 ## Author
 
@@ -250,4 +240,5 @@ Although semantic batching was expected to improve training dynamics, the result
 
 MPhil Artificial Intelligence
 
-Focus: NLP, LLMs, Instruction Fine-Tuning, and Agentic AI Systems
+Research interests: Large Language Models, NLP, instruction fine-tuning,
+retrieval, and applied AI systems.
