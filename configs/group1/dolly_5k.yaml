@@ -1,0 +1,62 @@
+experiment:
+  group: group1
+  name: dolly_5k_multiseed
+  description: >
+    Comparison of random, semantically grouped, and two-phase
+    curriculum batching strategies for instruction fine-tuning.
+
+model:
+  name: google/flan-t5-small
+
+dataset:
+  name: databricks/databricks-dolly-15k
+  split: train
+  subset_size: 5000
+  shuffle_seed: 42
+  eval_ratio: 0.10
+  split_seed: 42
+
+tokenization:
+  max_input_length: 256
+  max_target_length: 128
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules:
+    - q
+    - v
+
+training:
+  per_device_train_batch_size: 3
+  gradient_accumulation_steps: 2
+  per_device_eval_batch_size: 2
+  max_steps: 300
+  learning_rate: 0.003
+  logging_steps: 50
+  fp16: false
+
+semantic_grouping:
+  embedding_model: all-MiniLM-L6-v2
+  embed_instruction_only: false
+  top_k: 8
+  similarity: cosine
+
+experiment_design:
+  strategies:
+    - random
+    - grouped
+    - grouped_to_random
+    - random_to_grouped
+  seeds:
+    - 13
+    - 21
+    - 42
+
+evaluation:
+  metrics:
+    - eval_loss
+    - rouge1
+    - rouge2
+    - rougeL
