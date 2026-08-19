@@ -21,11 +21,11 @@ venv/
 *.bak
 *.swp
 
-# Heavy research artifacts
-data/
-models/
-experiments/
-exports/
+# Heavy research artifacts at repository root
+/data/
+/models/
+/experiments/
+/exports/
 
 # Large binary artifacts
 *.bin
