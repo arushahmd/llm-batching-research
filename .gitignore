@@ -65,3 +65,6 @@ reports/**/predictions.csv
 
 # Local research intake
 /llm-batching-inbox/
+
+# Local experiment outputs
+/outputs/
