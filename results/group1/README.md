@@ -1,18 +1,11 @@
 # Group 1 Results
 
-This directory contains lightweight, reviewed metrics extracted from the
-executed Group 1 notebooks.
+This directory contains reviewed metrics consolidated from the executed Dolly
+1K, 3K, and 5K multi-seed notebooks.
 
-No experiment was rerun to create these files. The values were consolidated
-from the preserved 1K, 3K, and 5K multi-seed notebooks.
+No training run was repeated to create these repository artifacts.
 
-## Files
-
-### `per_seed_results.csv`
-
-Contains one row for every completed Group 1 run.
-
-The standardized experiment family contains:
+## Experiment Matrix
 
 ```text
 3 dataset sizes
@@ -21,75 +14,116 @@ The standardized experiment family contains:
 = 36 runs
 ```
 
-Columns:
-
-- `dataset_label`
-- `dataset_size`
-- `strategy`
-- `seed`
-- `eval_loss`
-- `rouge1`
-- `rouge2`
-- `rougeL`
-
-### `summary.csv`
-
-Aggregates the three seeds for every dataset-size / strategy combination.
-
-For each metric it reports:
-
-- arithmetic mean
-- sample standard deviation across the three seeds
-
-This produces 12 aggregate rows:
-
-```text
-3 dataset sizes × 4 strategies = 12 summaries
-```
-
-## Dataset Sizes
-
-The standardized Group 1 conditions are:
+Dataset sizes:
 
 - Dolly 1K
 - Dolly 3K
 - Dolly 5K
 
-All three use the canonical thesis-v2 settings documented in:
-
-```text
-configs/group1/
-docs/experiment-protocol.md
-```
-
-## Strategies
-
-The four Group 1 strategies are:
+Strategies:
 
 - `random`
 - `grouped`
 - `grouped_to_random`
 - `random_to_grouped`
 
-## Metrics
+Seeds:
 
-The verified metrics included here are:
+- `13`
+- `21`
+- `42`
+
+## Result Files
+
+### `per_seed_results.csv`
+
+Contains one row for every completed Group 1 run with:
+
+- dataset size
+- batching strategy
+- seed
+- evaluation loss
+- ROUGE-1 F1
+- ROUGE-2 F1
+- ROUGE-L F1
+
+### `summary.csv`
+
+Contains 12 aggregate rows:
+
+```text
+3 dataset sizes × 4 strategies = 12 summaries
+```
+
+Each metric reports the arithmetic mean and sample standard deviation across
+the three seeds.
+
+## Figures
+
+### Evaluation Loss
+
+![Evaluation loss](figures/eval_loss.png)
+
+### ROUGE-1
+
+![ROUGE-1](figures/rouge1.png)
+
+### ROUGE-2
+
+![ROUGE-2](figures/rouge2.png)
+
+### ROUGE-L
+
+![ROUGE-L](figures/rougeL.png)
+
+Error bars represent one sample standard deviation across the three experiment
+seeds.
+
+## Descriptive Finding
+
+No single batching strategy is the best across all dataset sizes and all
+metrics.
+
+The best aggregate mean changes by metric and dataset size:
+
+- the 1K condition shows modest generation-metric advantages for curriculum
+  variants;
+- the 3K condition has mixed winners across loss and ROUGE metrics;
+- the 5K condition again produces mixed winners, with random or structured
+  strategies depending on the metric.
+
+The differences are generally small and should be interpreted alongside the
+seed-to-seed standard deviations.
+
+No formal statistical-significance claim is made here.
+
+## Evaluation Scope
+
+The verified Group 1 metrics are:
 
 - evaluation loss
 - ROUGE-1 F1
 - ROUGE-2 F1
 - ROUGE-L F1
 
-BERTScore is intentionally not included because it was not calculated by the
+BERTScore is intentionally excluded because it was not calculated by the
 verified Group 1 evaluation implementation.
 
-## Interpretation
+## Protocol
 
-These files are descriptive research artifacts.
+The canonical machine-readable configurations are:
 
-Final claims should be based on the multi-seed aggregate behavior rather than
-on a single best run. Differences should also be interpreted in the context of
-seed-to-seed variation.
+```text
+configs/group1/dolly_1k.yaml
+configs/group1/dolly_3k.yaml
+configs/group1/dolly_5k.yaml
+```
 
-The contrastive-learning extension is a separate experimental block and should
-not overwrite or modify these Group 1 baseline results.
+The human-readable protocol is documented in:
+
+```text
+docs/experiment-protocol.md
+```
+
+The contrastive-learning extension is a separate experiment and must not
+overwrite these baseline artifacts.
