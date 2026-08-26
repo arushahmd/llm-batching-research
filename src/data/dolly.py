@@ -5,7 +5,7 @@ from transformers import PreTrainedTokenizerBase
 
 
 def format_dolly_example(example: dict) -> dict[str, str]:
-    """Convert a Dolly example into the input/target format used in Group 1."""
+    """Convert a Dolly example into the matched study's input/target format."""
     instruction = example["instruction"]
     context = example.get("context")
     response = example["response"]
@@ -31,8 +31,9 @@ def load_dolly_split(
     """
     Load, shuffle, subset, format, and split Dolly.
 
-    The same deterministic data split is reused across all strategies and
-    experiment seeds so that batching strategy is the primary varying factor.
+    The same deterministic data split is reused across all methods and
+    experiment seeds so that batch composition or example order is the
+    primary varying factor.
     """
     dataset = load_dataset(dataset_name, split="train")
 
@@ -64,12 +65,12 @@ def tokenize_dolly_split(
     max_target_length: int,
 ) -> tuple[Dataset, Dataset]:
     """
-    Tokenize Group 1 train/evaluation datasets.
+    Tokenize the matched study's train/evaluation datasets.
 
     Note:
-        Label padding behavior intentionally reproduces the currently completed
-        Group 1 notebooks. Any change to ignored label padding should be treated
-        as a protocol change and evaluated in a separate rerun.
+        Label padding behavior intentionally reproduces the completed Group 1
+        and Group 2 notebooks. Any change to ignored label padding should be
+        treated as a protocol change and evaluated in a separate rerun.
     """
 
     def preprocess(example: dict) -> dict:

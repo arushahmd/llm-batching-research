@@ -1,0 +1,13 @@
+# Core dependencies for the curated thesis-v2 code.
+# Exact executed runtime versions were not frozen; this is not a lock file.
+torch
+transformers
+datasets
+peft
+accelerate
+sentence-transformers
+sentencepiece
+faiss-cpu
+numpy
+rouge-score
+PyYAML

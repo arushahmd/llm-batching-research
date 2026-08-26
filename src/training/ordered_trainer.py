@@ -8,8 +8,9 @@ class FixedOrderSampler(torch.utils.data.Sampler):
     """
     Sampler that yields dataset indices in one predefined order.
 
-    Group 1 constructs the complete physical-batch sequence before training.
-    This sampler ensures the Trainer consumes examples in exactly that order.
+    Both experiment groups construct the complete physical-batch sequence
+    before training. This sampler ensures the Trainer consumes examples in
+    exactly that order.
     """
 
     def __init__(self, indices: list[int]):
@@ -26,8 +27,8 @@ class OrderedTrainer(Seq2SeqTrainer):
     """
     Seq2SeqTrainer that uses a predefined training-example order.
 
-    The fixed order is produced by one of the Group 1 batching strategies:
-    random, grouped, grouped_to_random, or random_to_grouped.
+    The fixed order is produced by a Group 1 composition strategy or a Group 2
+    length-curriculum direction.
     """
 
     def __init__(

@@ -1,0 +1,51 @@
+experiment:
+  group: group2
+  name: dolly_5k_length_curriculum_multiseed
+  description: >
+    Fully sorted easy-to-hard versus hard-to-easy length curriculum.
+
+model:
+  name: google/flan-t5-small
+
+dataset:
+  name: databricks/databricks-dolly-15k
+  split: train
+  subset_size: 5000
+  shuffle_seed: 42
+  eval_ratio: 0.10
+  split_seed: 42
+
+tokenization:
+  max_input_length: 256
+  max_target_length: 128
+  mask_target_padding: false
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules: [q, v]
+
+training:
+  per_device_train_batch_size: 3
+  gradient_accumulation_steps: 2
+  per_device_eval_batch_size: 2
+  max_steps: 300
+  learning_rate: 0.003
+  logging_steps: 50
+  fp16: false
+
+length_curriculum:
+  difficulty_proxy: input_token_length
+  text_source: instruction_and_context
+  apply_training_max_length_to_difficulty: false
+  ordering: fully_sorted
+  cycle_if_needed: true
+
+experiment_design:
+  methods: [easy_to_hard, hard_to_easy]
+  seeds: [13, 21, 42]
+
+evaluation:
+  generation_batch_size: 64
+  metrics: [eval_loss, rouge1, rouge2, rougeL]

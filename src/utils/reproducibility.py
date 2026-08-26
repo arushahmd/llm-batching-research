@@ -8,7 +8,7 @@ import torch
 
 def set_experiment_seed(seed: int) -> None:
     """
-    Set the random seeds used by the current Group 1 experiment protocol.
+    Set the random seeds used by the matched experiment protocol.
 
     The seed is applied before fresh model initialization so that model
     initialization and other stochastic operations are controlled per run.

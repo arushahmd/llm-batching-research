@@ -16,7 +16,7 @@ def evaluate_generation(
     Generate responses for the evaluation split and compute
     ROUGE-1, ROUGE-2, and ROUGE-L F1 scores.
 
-    This reproduces the current Group 1 notebook evaluation protocol.
+    This reproduces the matched Group 1 and Group 2 evaluation protocol.
     """
     model.eval()
 
